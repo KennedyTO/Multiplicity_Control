@@ -1,0 +1,126 @@
+---
+title: "Exercise06"
+author: "Ken Suzuki"
+date: "2023-12-10"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Conditions & Background:   
+
+This exercise will use the dataset 'disgusting_scale.csv', available on eClass. The main outcome variables are **scores on the Disgust Scale Revised**. This scale contains three factors:
+
+1.  **The 'Core Disgust', a mechanism which elevates awareness about disease.**
+
+2.  **The 'Animal Reminder', a mechanism which elevates awareness to human animalistic nature.**
+
+3.  **The 'ContaminationBased Disgust', which contains items related to dangers of contamination. There is also a 'General Disgust Score' across all items.**
+
+***Use a = .05 for both questions.***
+
+### Tasks
+
+#### Conduct a general linear model to explore the effects of age (Age) and education (Educ) on the general disgust score (Mean_general_ds). Note: use the categorical version of education (Educ) for this question. 
+
+```{r}
+d <- read.csv("~/Desktop/P4330/P4330 R code/Exercise06/Multiplicity Control/disgust_scale.csv") #disgust_scale.csv
+names(d)
+head(d)
+library(emmeans)
+
+m <- lm(Mean_general_ds ~ Educ + Age, data = d)
+summary(m)
+
+```
+
+#### Conduct all pairwise comparisons for education using each of the following methods: a) No multiplicity control; b) Bonferroni familywise error control; c) Benjamini- Hochberg false discovery rate control. Summarize which effects are statistically significant with each method.
+
+```{r}
+mns <- emmeans(m, "Educ")
+pairs(mns, adjust="none")
+```
+
+**Bonferroni**
+
+```{r}
+pairs(mns, adjust="bonferroni")
+```
+
+**f**
+
+```{r}
+pairs(mns, adjust="fdr")
+```
+
+#### Conduct a general linear model to explore the effects age (Age), gender (Gender), and education (Education) on each of the factors of the Disgust Scale (Mean_Animal_reminder, Mean_core, Mean_Contamination). Note: use the continuous version of education (Education) for this question. 
+
+##### 1. The 'Core Disgust' - a mechanism which elevates awareness about disease. 
+
+```{r}
+# Build each model 
+
+m2 <- lm(Mean_Animal_reminder ~ Age + Gender + Education,
+         data = d)
+summary(m2)
+```
+
+##### 2. The 'Animal Reminder'- a mechanism which elevates awareness to human animalistic nature. 
+
+```{r}
+# Build each model 
+m3 <- lm(Mean_Contamination ~ Age + Gender + Education,
+         data = d)
+summary(m3)
+```
+
+##### 3. The 'ContaminationBased Disgust'- which contains items related to dangers of contamination. There is also a 'General Disgust Score' across all items.
+
+```{r}
+# Build each model 
+m4 <- lm(Mean_core ~ Age + Gender + Education,
+   data = d)
+summary(m4)
+```
+
+#### Treat the full collection of hypotheses as a single family (i.e., each of the three predictors across each of the three outcome variables - 9 total hypothesis tests). 
+
+```{r}
+pvals<-c(summary(m2)$coefficients[2:4,4],
+         summary(m3)$coefficients[2:4,4],
+         summary(m4)$coefficients[2:4,4])
+pvals
+names(pvals) <- c("age_ar", "gender_ar", "educ_ar",
+                  "age_con", "gender_con", "educ_con",
+                  "age_cor", "gender_cor", "educ_cor")
+```
+
+#### Assess the statistical significance of each hypothesis using each of the following methods: 
+
+##### a) No multiplicity control; 
+
+```{r}
+p.adjust(pvals, method = "none")
+```
+
+##### b) Bonferroni familywise error control; 
+
+```{r}
+p.adjust(pvals, method = "bonferroni")
+```
+
+##### c) Holm familywise error control; 
+
+```{r}
+p.adjust(pvals, method = "holm")
+```
+
+##### d) BenjaminiHochberg false discovery rate control. Summarize which effects are statistically significant with each method.
+
+```{r}
+p.adjust(pvals, method = "fdr")
+```
